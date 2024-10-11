@@ -74,8 +74,4 @@
             startCamera();
         });
     </script>
-
-
-
-    </script>
 @endsection

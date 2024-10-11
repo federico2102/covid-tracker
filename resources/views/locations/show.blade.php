@@ -13,6 +13,8 @@
                 <p><strong>Details:</strong> {{ $location->optional_details }}</p>
             @endif
 
+            <div id="map" style="width: 100%; height: 400px;"></div>
+
             <!-- Show the QR code only if the user is an admin -->
             @if($isAdmin && $location->qr_code)
                 <div class="text-center">
@@ -26,4 +28,26 @@
             <a href="{{ route('locations') }}" class="btn btn-primary">Back to Locations</a>
         </div>
     </div>
+
+    <script>
+        function initMap() {
+            const geolocation = "{{ $location->geolocation }}".split(',');
+            const latLng = { lat: parseFloat(geolocation[0]), lng: parseFloat(geolocation[1]) };
+
+            const map = new google.maps.Map(document.getElementById('map'), {
+                center: latLng,
+                zoom: 15
+            });
+
+            const marker = new google.maps.Marker({
+                position: latLng,
+                map: map
+            });
+        }
+
+        window.onload = initMap;
+    </script>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY') }}&libraries=places&callback=initMap" async defer></script>
+
 @endsection

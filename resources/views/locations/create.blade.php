@@ -17,10 +17,9 @@
                 <input type="text" class="form-control" id="address" name="address" required>
             </div>
 
-            <div class="mb-3">
-                <label for="geolocation" class="form-label">Geolocation (to be replaced by Google Maps API)</label>
-                <input type="text" class="form-control" id="geolocation" name="geolocation" placeholder="Geolocation placeholder for now" value="37.774929, -122.419418" required>
-            </div>
+            <!-- Map Section -->
+            <div id="map" style="width: 100%; height: 400px;"></div>
+            <input type="hidden" id="geolocation" name="geolocation" value="" data-lat="41.3851" data-lng="2.1734">
 
             <div class="mb-3">
                 <label for="max_capacity" class="form-label">Max Capacity</label>
@@ -40,4 +39,71 @@
             <button type="submit" class="btn btn-primary">Add Location</button>
         </form>
     </div>
+
+    <script>
+        let map;
+        let marker;
+        let autocomplete;
+
+        function initMap() {
+            var defaultLocation = { lat: 41.3851, lng: 2.1734 }; // Coordinates for Barcelona
+
+            // Initialize the map
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: defaultLocation,
+                zoom: 14,
+            });
+
+            // Initialize the marker
+            marker = new google.maps.Marker({
+                position: defaultLocation,
+                map: map,
+                draggable: true,
+            });
+
+            // Set geolocation input when the marker is dragged
+            google.maps.event.addListener(marker, 'dragend', function(event) {
+                document.getElementById('geolocation').value = event.latLng.lat() + ',' + event.latLng.lng();
+            });
+
+            // Initialize autocomplete for the address input
+            autocomplete = new google.maps.places.Autocomplete(document.getElementById('address'));
+
+            // Bind the autocomplete to the map's bounds
+            autocomplete.bindTo('bounds', map);
+
+            // Update map and marker when a user selects an address from autocomplete
+            autocomplete.addListener('place_changed', function() {
+                const place = autocomplete.getPlace();
+
+                if (!place.geometry) {
+                    console.log("No details available for input: '" + place.name + "'");
+                    return;
+                }
+
+                // If the place has a geometry, then present it on a map.
+                if (place.geometry.viewport) {
+                    map.fitBounds(place.geometry.viewport);
+                } else {
+                    map.setCenter(place.geometry.location);
+                    map.setZoom(17);  // Adjust the zoom after the selection
+                }
+
+                // Move marker to the new location
+                marker.setPosition(place.geometry.location);
+
+                // Update geolocation field
+                document.getElementById('geolocation').value = place.geometry.location.lat() + ',' + place.geometry.location.lng();
+            });
+        }
+
+        // Initialize the map after the page has loaded
+        window.onload = initMap;
+    </script>
+
+    <!-- Load the Google Maps and Places API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY') }}&libraries=places&callback=initMap" async defer></script>
+
 @endsection
+
+
