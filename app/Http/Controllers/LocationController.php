@@ -31,6 +31,14 @@ class LocationController extends Controller
         return view('locations.create');
     }
 
+    public function show(Location $location): View
+    {
+        // Check if the user is an admin to display the QR code
+        $isAdmin = auth()->check() && auth()->user()->is_admin;
+
+        return view('locations.show', compact('location', 'isAdmin'));
+    }
+
     /**
      * Show the form for editing an existing location (Admin only).
      *
@@ -98,7 +106,7 @@ class LocationController extends Controller
         $qrCodePath = 'qrcodes/' . $location->id . '.png';
 
         // Generate and store the QR code in the storage folder
-        QrCode::format('png')->generate($qrCodeContent, storage_path('app/public/' . $qrCodePath));
+        QrCode::format('png')->size(300)->margin(1)->generate($qrCodeContent, storage_path('app/public/' . $qrCodePath));
 
         // Save the QR code link to the location
         $location->qr_code = '/storage/' . $qrCodePath;
@@ -107,7 +115,6 @@ class LocationController extends Controller
         // Redirect back to locations with a success message
         return redirect()->route('locations')->with('success', 'Location added successfully.');
     }
-
 
     public function destroy(Location $location): RedirectResponse
     {

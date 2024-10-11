@@ -15,7 +15,12 @@
                 <div class="col-md-4 mb-4">
                     <div class="card h-100">
                         <div class="card-body">
-                            <h5 class="card-title">{{ $location->name }}</h5>
+                            <!-- Make the location name clickable -->
+                            <h5 class="card-title">
+                                <a href="{{ route('locations.show', $location->id) }}">
+                                    {{ $location->name }}
+                                </a>
+                            </h5>
                             <p class="card-text">
                                 <strong>Address:</strong> {{ $location->address }}<br>
                                 <strong>Geolocation:</strong> {{ $location->geolocation }}<br>
@@ -29,7 +34,6 @@
                             @else
                                 <p>No image available.</p>
                                 @endif
-                                </p>
 
                                 @if(Auth::check() && Auth::user()->is_admin)
                                     <a href="{{ route('locations.edit', $location->id) }}" class="btn btn-secondary">Edit Location</a>

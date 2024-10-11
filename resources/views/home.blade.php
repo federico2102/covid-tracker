@@ -30,7 +30,11 @@
                                 @if(Auth::user()->is_infected)
                                     <button class="btn btn-secondary btn-lg" disabled>Check-in</button>
                                 @else
-                                    <a href="{{ route('checkin') }}" class="btn btn-primary btn-lg">Check-in</a>
+                                    @if($isCheckedIn)
+                                        <a href="{{ route('checkout') }}" class="btn btn-danger">Check Out</a>
+                                    @else
+                                        <a href="{{ route('checkin') }}" class="btn btn-success">Check In</a>
+                                    @endif
                                 @endif
                             </div>
                             <div class="col-md-4 text-center">

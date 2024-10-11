@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CheckIn;
 use App\Models\Location;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
@@ -11,43 +12,78 @@ use Illuminate\Http\Request;
 
 class CheckInController extends Controller
 {
-public function show(): View|Factory|Application
-{
-return view('checkin/checkin');
-}
+    public function show(): View|Factory|Application
+    {
+    return view('checkin/checkin');
+    }
 
-public function process(Request $request): RedirectResponse
-{
-$qrCode = $request->input('qr_code');
+    public function process(Request $request): RedirectResponse
+    {
+        // Get the location ID from the QR code
+        $url = $request->input('qr_code');
 
-// Decode the QR code to get the location ID (if the QR code contains a link, extract the location ID)
-$locationId = $this->getLocationIdFromQrCode($qrCode);
+        // Parse the URL and extract the path
+        $path = parse_url($url, PHP_URL_PATH);
 
-// Fetch the location
-$location = Location::findOrFail($locationId);
+        // Extract the ID from the path
+        $locationId = basename($path);
 
-// Add the user to the location (you can customize this logic based on your needs)
-$location->current_people += 1;
-$location->save();
+        // Find the location
+        $location = Location::find($locationId);
 
-// Optionally, save the check-in details to a `check_ins` table
-// CheckIn::create([...]);
 
-return redirect()->route('checkin.success', $location->id);
-}
+        if (!$location) {
+            return redirect()->back()->with('error', 'Invalid location.');
+        }
 
-protected function getLocationIdFromQrCode($qrCode): false|string
-{
-// Extract the qr location ID
-$urlParts = parse_url($qrCode);
-$pathParts = explode('/', $urlParts['path']);
+        // Check if the user is already checked into this location
+        $existingCheckin = CheckIn::where('user_id', auth()->id())
+            ->where('location_id', $locationId)
+            ->whereNull('check_out_time')
+            ->first();
 
-// Assuming the location ID is the last part of the URL
-return end($pathParts);
-}
+        if ($existingCheckin) {
+            return redirect()->back()->with('error', 'You are already checked in at this location.');
+        }
 
-public function success(Location $location): View|Factory|Application
-{
-return view('checkin/checkin_success', compact('location'));
+        // Register the check-in
+        CheckIn::create([
+            'user_id' => auth()->id(),
+            'location_id' => $locationId,
+            'check_in_time' => now(),
+        ]);
+
+        // Increase the current people count at the location
+        $location->increment('current_people');
+
+        return redirect()->route('checkin.success', ['location' => $location->id]);
+    }
+
+    public function checkout(Request $request): RedirectResponse
+    {
+        // Find the user's active check-in
+        $checkIn = CheckIn::where('user_id', auth()->id())
+            ->whereNull('check_out_time')
+            ->first();
+
+        if (!$checkIn) {
+            return redirect()->back()->with('error', 'You are not checked in anywhere.');
+        }
+
+        // Update the check-out time
+        $checkIn->update([
+            'check_out_time' => now(),
+        ]);
+
+        // Decrease the current people count at the location
+        $location = Location::find($checkIn->location_id);
+        $location->decrement('current_people');
+
+        return redirect()->route('home')->with('success', 'Successfully checked out.');
+    }
+
+    public function success(Location $location): View|Factory|Application
+    {
+    return view('checkin.success', compact('location'));
 }
 }
