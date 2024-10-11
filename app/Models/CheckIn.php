@@ -2,22 +2,35 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CheckIn extends Model
 {
     protected $fillable = ['user_id', 'location_id', 'check_in_time', 'check_out_time'];
 
-    public function user(): BelongsTo
+    // Check if a user is already checked in at a location
+    public static function isCheckedIn($userId, $locationId)
     {
-        return $this->belongsTo(User::class);
+        return self::where('user_id', $userId)
+            ->where('location_id', $locationId)
+            ->whereNull('check_out_time')
+            ->exists();
     }
 
-    public function location(): BelongsTo
+    // Register a new check-in
+    public static function registerCheckIn($userId, $locationId)
     {
-        return $this->belongsTo(Location::class);
+        return self::create([
+            'user_id' => $userId,
+            'location_id' => $locationId,
+            'check_in_time' => now(),
+        ]);
+    }
+
+    // Register a check-out
+    public function registerCheckOut()
+    {
+        $this->update(['check_out_time' => now()]);
     }
 }
 

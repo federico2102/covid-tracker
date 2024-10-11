@@ -2,25 +2,48 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class Location extends Model
 {
     protected $fillable = [
-        'name',
-        'address',
-        'geolocation',
-        'max_capacity',
-        'current_people',
-        'qr_code',
-        'optional_details',
-        'picture'];
+        'name', 'address', 'geolocation', 'max_capacity', 'current_people',
+        'optional_details', 'picture', 'qr_code'
+    ];
 
-    public function checkIns(): HasMany
+    // Generate a QR code for the location and store it
+    public function generateQrCode(): void
     {
-        return $this->hasMany(CheckIn::class);
+        $qrCodeContent = route('locations.show', $this->id);  // Link to the location
+        $qrCodePath = 'qrcodes/' . $this->id . '.png';
+
+        // Generate and save the QR code
+        QrCode::format('png')->size(300)->margin(1)->generate($qrCodeContent, storage_path('app/public/' . $qrCodePath));
+
+        $this->qr_code = '/storage/' . $qrCodePath;
+        $this->save();
+    }
+
+    // Handle picture upload
+    public static function handlePictureUpload($request)
+    {
+        if ($request->hasFile('picture')) {
+            return $request->file('picture')->store('pictures', 'public');
+        }
+        return null;
+    }
+
+    // Increment the current people count
+    public function incrementPeople(): void
+    {
+        $this->increment('current_people');
+    }
+
+    // Decrement the current people count
+    public function decrementPeople(): void
+    {
+        $this->decrement('current_people');
     }
 }
 
