@@ -45,5 +45,10 @@ class Location extends Model
     {
         $this->decrement('current_people');
     }
+
+    public function isFull(): bool
+    {
+        return $this->current_people >= $this->max_capacity;
+    }
 }
 

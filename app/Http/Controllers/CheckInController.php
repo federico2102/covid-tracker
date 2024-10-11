@@ -27,6 +27,11 @@ if (!$location) {
 return redirect()->back()->with('error', 'Invalid location.');
 }
 
+// Check if the location has reached its max capacity
+    if ($location->isFull()) {
+        return redirect()->route('home')->with('error', 'This location has reached its maximum capacity. Please try again later.');
+    }
+
 if (CheckIn::isCheckedIn(auth()->id(), $locationId)) {
 return redirect()->back()->with('error', 'You are already checked in at this location.');
 }
