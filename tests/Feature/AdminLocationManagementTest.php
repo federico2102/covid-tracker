@@ -3,9 +3,8 @@
 namespace Tests\Feature;
 
 use Illuminate\Http\UploadedFile;
+use Tests\Support\UserTestHelper;
 use Tests\TestCase;
-use App\Models\User;
-use App\Models\Location;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\AssertionHelper;
 use Tests\Support\LocationTestHelper;
@@ -16,7 +15,7 @@ class AdminLocationManagementTest extends TestCase
 
     public function test_admin_can_create_location()
     {
-        $admin = LocationTestHelper::createAdminUser();
+        $admin = UserTestHelper::createAdminUser();
         $response = LocationTestHelper::createLocationRequest($this->actingAs($admin), [
             'name' => 'New Location',
             'address' => '123 Test St',
@@ -30,7 +29,7 @@ class AdminLocationManagementTest extends TestCase
 
     public function test_admin_can_edit_location()
     {
-        $admin = LocationTestHelper::createAdminUser();
+        $admin = UserTestHelper::createAdminUser();
         $location = LocationTestHelper::createLocation();
 
         $response = LocationTestHelper::updateLocationRequest($this->actingAs($admin), $location->id, [
@@ -46,7 +45,7 @@ class AdminLocationManagementTest extends TestCase
 
     public function test_admin_can_delete_location()
     {
-        $admin = LocationTestHelper::createAdminUser();
+        $admin = UserTestHelper::createAdminUser();
         $location = LocationTestHelper::createLocation();
 
         $response = LocationTestHelper::deleteLocationRequest($this->actingAs($admin), $location->id);
@@ -57,7 +56,7 @@ class AdminLocationManagementTest extends TestCase
 
     public function test_non_admin_user_cannot_create_or_edit_location()
     {
-        $user = LocationTestHelper::createNonAdminUser();
+        $user = UserTestHelper::createNonAdminUser();
 
         // Create location
         $response = LocationTestHelper::createLocationRequest($this->actingAs($user), [
@@ -81,7 +80,7 @@ class AdminLocationManagementTest extends TestCase
 
     public function test_non_admin_user_cannot_delete_location()
     {
-        $user = LocationTestHelper::createNonAdminUser();
+        $user = UserTestHelper::createNonAdminUser();
         $location = LocationTestHelper::createLocation();
 
         $response = LocationTestHelper::deleteLocationRequest($this->actingAs($user), $location->id);
@@ -91,7 +90,7 @@ class AdminLocationManagementTest extends TestCase
 
     public function test_admin_can_view_locations_list()
     {
-        $admin = LocationTestHelper::createAdminUser();
+        $admin = UserTestHelper::createAdminUser();
         $location = LocationTestHelper::createLocation();
 
         $response = $this->actingAs($admin)->get(route('locations'));
@@ -103,7 +102,7 @@ class AdminLocationManagementTest extends TestCase
 
     public function test_admin_can_view_location_details()
     {
-        $admin = LocationTestHelper::createAdminUser();
+        $admin = UserTestHelper::createAdminUser();
         $location = LocationTestHelper::createLocation();
 
         $response = $this->actingAs($admin)->get(route('locations.show', $location->id));
@@ -115,7 +114,7 @@ class AdminLocationManagementTest extends TestCase
 
     public function test_non_admin_can_view_locations_list()
     {
-        $user = LocationTestHelper::createNonAdminUser();
+        $user = UserTestHelper::createNonAdminUser();
         $location = LocationTestHelper::createLocation();
 
         $response = $this->actingAs($user)->get(route('locations'));
@@ -128,7 +127,7 @@ class AdminLocationManagementTest extends TestCase
 
     public function test_non_admin_can_view_location_details()
     {
-        $user = LocationTestHelper::createNonAdminUser();
+        $user = UserTestHelper::createNonAdminUser();
         $location = LocationTestHelper::createLocation();
 
         $response = $this->actingAs($user)->get(route('locations.show', $location->id));
@@ -141,7 +140,7 @@ class AdminLocationManagementTest extends TestCase
 
     public function test_location_form_validation()
     {
-        $admin = LocationTestHelper::createAdminUser();
+        $admin = UserTestHelper::createAdminUser();
 
         $response = LocationTestHelper::createLocationRequest($this->actingAs($admin), [
             'name' => '',
@@ -155,7 +154,7 @@ class AdminLocationManagementTest extends TestCase
 
     public function test_non_admin_cannot_access_create_form()
     {
-        $user = LocationTestHelper::createNonAdminUser();
+        $user = UserTestHelper::createNonAdminUser();
 
         $response = $this->actingAs($user)->get(route('locations.create'));
 
@@ -164,7 +163,7 @@ class AdminLocationManagementTest extends TestCase
 
     public function test_admin_can_access_create_form()
     {
-        $admin = LocationTestHelper::createAdminUser();
+        $admin = UserTestHelper::createAdminUser();
 
         $response = $this->actingAs($admin)->get(route('locations.create'));
 
@@ -174,7 +173,7 @@ class AdminLocationManagementTest extends TestCase
 
     public function test_invalid_geolocation_format()
     {
-        $admin = LocationTestHelper::createAdminUser();
+        $admin = UserTestHelper::createAdminUser();
 
         $response = LocationTestHelper::createLocationRequest($this->actingAs($admin), [
             'name' => 'Test Location',
@@ -188,7 +187,7 @@ class AdminLocationManagementTest extends TestCase
 
     public function test_admin_can_upload_valid_image()
     {
-        $admin = LocationTestHelper::createAdminUser();
+        $admin = UserTestHelper::createAdminUser();
         $file = UploadedFile::fake()->image('location.jpg');
 
         $response = LocationTestHelper::createLocationRequest($this->actingAs($admin), [

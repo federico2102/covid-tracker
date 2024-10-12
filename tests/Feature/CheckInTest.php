@@ -7,6 +7,8 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\AssertionHelper;
 use Tests\Support\CheckInTestHelper;
+use Tests\Support\LocationTestHelper;
+use Tests\Support\UserTestHelper;
 use Tests\TestCase;
 use Illuminate\Support\Facades\DB;
 
@@ -16,8 +18,8 @@ class CheckInTest extends TestCase
 
     public function test_user_can_check_in_successfully()
     {
-        $user = CheckInTestHelper::createUser();
-        $location = CheckInTestHelper::createLocation();
+        $user = UserTestHelper::createUser();
+        $location = LocationTestHelper::createLocation();
 
         $response = CheckInTestHelper::checkInUser($this->actingAs($user), $location->id);
 
@@ -35,8 +37,8 @@ class CheckInTest extends TestCase
 
     public function test_infected_user_cannot_check_in()
     {
-        $user = CheckInTestHelper::createUser(['is_infected' => true]);
-        $location = CheckInTestHelper::createLocation();
+        $user = UserTestHelper::createUser(['is_infected' => true]);
+        $location = LocationTestHelper::createLocation();
 
         $response = CheckInTestHelper::checkInUser($this->actingAs($user), $location->id);
 
@@ -49,8 +51,8 @@ class CheckInTest extends TestCase
 
     public function test_user_can_check_out_successfully()
     {
-        $user = CheckInTestHelper::createUser();
-        $location = CheckInTestHelper::createLocation();
+        $user = UserTestHelper::createUser();
+        $location = LocationTestHelper::createLocation();
 
         CheckInTestHelper::checkInUser($this->actingAs($user), $location->id);
 
@@ -70,8 +72,8 @@ class CheckInTest extends TestCase
 
     public function test_auto_checkout_after_3_hours()
     {
-        $user = CheckInTestHelper::createUser();
-        $location = CheckInTestHelper::createLocation(['current_people' => 1]);
+        $user = UserTestHelper::createUser();
+        $location = LocationTestHelper::createLocation(['current_people' => 1]);
 
         // Check the user in
         $checkInTime = Carbon::now()->subHours(4);
@@ -99,9 +101,9 @@ class CheckInTest extends TestCase
 
     public function test_prevent_check_in_if_user_is_already_checked_in()
     {
-        $user = CheckInTestHelper::createUser();
-        $location = CheckInTestHelper::createLocation();
-        $location2 = CheckInTestHelper::createLocation();
+        $user = UserTestHelper::createUser();
+        $location = LocationTestHelper::createLocation();
+        $location2 = LocationTestHelper::createLocation();
 
         // First check-in
         CheckInTestHelper::checkInUser($this->actingAs($user), $location->id);
@@ -126,8 +128,8 @@ class CheckInTest extends TestCase
 
     public function test_user_cannot_check_in_if_location_is_full()
     {
-        $user = CheckInTestHelper::createUser();
-        $location = CheckInTestHelper::createLocation();
+        $user = UserTestHelper::createUser();
+        $location = LocationTestHelper::createLocation();
         $location->current_people = $location->max_capacity;
         $location->save();
 
@@ -140,8 +142,8 @@ class CheckInTest extends TestCase
 
     public function test_user_can_check_in_after_checkout()
     {
-        $user = CheckInTestHelper::createUser();
-        $location = CheckInTestHelper::createLocation();
+        $user = UserTestHelper::createUser();
+        $location = LocationTestHelper::createLocation();
 
         CheckInTestHelper::checkInUser($this->actingAs($user), $location->id);
         CheckInTestHelper::checkOutUser($this->actingAs($user));
@@ -160,7 +162,7 @@ class CheckInTest extends TestCase
 
     public function test_check_in_requires_valid_location_id()
     {
-        $user = CheckInTestHelper::createUser();
+        $user = UserTestHelper::createUser();
 
         // Attempt to check in with invalid data
         $response = CheckInTestHelper::checkInUser($this->actingAs($user), null);
@@ -171,8 +173,8 @@ class CheckInTest extends TestCase
 
     public function test_user_cannot_check_out_twice()
     {
-        $user = CheckInTestHelper::createUser();
-        $location = CheckInTestHelper::createLocation();
+        $user = UserTestHelper::createUser();
+        $location = LocationTestHelper::createLocation();
 
         CheckInTestHelper::checkInUser($this->actingAs($user), $location->id);
         CheckInTestHelper::checkOutUser($this->actingAs($user));
@@ -190,7 +192,7 @@ class CheckInTest extends TestCase
 
     public function test_user_cannot_check_in_without_qr_code()
     {
-        $user = CheckInTestHelper::createUser();
+        $user = UserTestHelper::createUser();
 
         // Attempt to check in without a qr_code parameter
         $response = $this->actingAs($user)->withoutMiddleware()->post(route('checkin.process'));
@@ -201,7 +203,7 @@ class CheckInTest extends TestCase
 
     public function test_user_cannot_check_in_when_logged_out()
     {
-        $location = CheckInTestHelper::createLocation();
+        $location = LocationTestHelper::createLocation();
 
         // Attempt to check in while not authenticated
         $response = $this->post(route('checkin.process'), [
@@ -213,7 +215,7 @@ class CheckInTest extends TestCase
 
     public function test_user_cannot_check_out_without_check_in()
     {
-        $user = CheckInTestHelper::createUser();
+        $user = UserTestHelper::createUser();
 
         // Simulate a checkout attempt without check-in
         $response = CheckInTestHelper::checkOutUser($this->actingAs($user));
@@ -223,8 +225,8 @@ class CheckInTest extends TestCase
 
     public function test_admin_cannot_check_in_if_infected()
     {
-        $admin = CheckInTestHelper::createUser(['is_infected' => true, 'is_admin' => true]);
-        $location = CheckInTestHelper::createLocation();
+        $admin = UserTestHelper::createUser(['is_infected' => true, 'is_admin' => true]);
+        $location = LocationTestHelper::createLocation();
 
         // Attempt to check in as an infected admin
         $response = CheckInTestHelper::checkInUser($this->actingAs($admin), $location->id);
