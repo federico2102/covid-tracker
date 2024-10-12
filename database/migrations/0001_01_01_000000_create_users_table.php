@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('phone_number')->nullable();  // Optional phone number for SMS
             $table->boolean('is_admin')->default(false); // Defines if the user is an admin
             $table->boolean('is_infected')->default(false); // Tracks if the user is currently infected
+            $table->timestamp('email_verified_at')->nullable();
             $table->timestamps();
         });
 

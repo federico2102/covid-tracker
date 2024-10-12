@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\InfectionReportController;
 use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -34,11 +35,11 @@ Route::get('/checkin', [App\Http\Controllers\CheckinController::class, 'show'])-
 Route::post('/checkin', [App\Http\Controllers\CheckinController::class, 'process'])->middleware('auth')->name('checkin.process');
 Route::get('/checkin/success/{location}', [App\Http\Controllers\CheckinController::class, 'success'])->name('checkin.success');
 // Check-out route
-Route::get('/checkout', [App\Http\Controllers\CheckinController::class, 'checkout'])->middleware('auth')->name('checkout');
+Route::post('/checkout', [App\Http\Controllers\CheckinController::class, 'checkout'])->middleware('auth')->name('checkout');
 
 // Routes for reporting covid tests
-Route::get('/positive-test', [App\Http\Controllers\TestController::class, 'positive'])->name('positive-test');
-Route::get('/negative-test', [App\Http\Controllers\TestController::class, 'negative'])->name('negative-test');
+Route::post('/infection-reports', [InfectionReportController::class, 'store'])->name('infectionReports.store');
+Route::post('/negative-test', [InfectionReportController::class, 'storeNegative'])->name('infectionReports.negative');
 
 // Locations list
 Route::get('/locations', [App\Http\Controllers\LocationController::class, 'index'])->name('locations');

@@ -13,6 +13,8 @@ use Illuminate\Notifications\Notifiable;
  */
 class User extends Authenticatable
 {
+    use HasFactory;
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
@@ -28,6 +30,7 @@ class User extends Authenticatable
         'phone_number',
         'password',
         'is_admin',
+        'is_infected'
     ];
 
 

@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InfectionReport extends Model
 {
+    use HasFactory;
+
     protected $fillable = ['user_id', 'test_date', 'test_picture', 'notified_contacts'];
 
     public function user(): BelongsTo

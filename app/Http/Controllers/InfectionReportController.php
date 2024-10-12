@@ -3,63 +3,64 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\InfectionReport;
+use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class InfectionReportController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function store(Request $request): RedirectResponse
     {
-        //
+        // Store positive test
+        $request->validate([
+            'test_date' => 'required|date|before_or_equal:today',
+            'proof' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+        ]);
+
+
+        $proofPath = null;
+        if ($request->hasFile('proof')) {
+            $proofPath = $request->file('proof')->store('proofs', 'public');
+        }
+
+        InfectionReport::create([
+            'user_id' => auth()->id(),
+            'test_date' => $request->test_date,
+            'proof' => $proofPath,
+            'is_active' => true,  // Set active when a positive test is reported
+        ]);
+
+        // Set the user's is_infected status to true
+        $user = auth()->user();
+        $user->is_infected = true;
+        $user->save();
+
+        return redirect()->route('home')->with('success', 'Positive test reported successfully.');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function storeNegative(Request $request): RedirectResponse
     {
-        //
-    }
+        // Store negative test
+        $request->validate([
+            'proof' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+        ]);
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
+        // Update the latest infection report to inactive
+        $infectionReport = InfectionReport::where('user_id', auth()->id())
+            ->where('is_active', true)
+            ->latest()
+            ->first();
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
+        if ($infectionReport) {
+            $infectionReport->update(['is_active' => false]);
+        }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
+        // Set the user's is_infected status to false
+        $user = auth()->user();
+        $user->is_infected = false;
+        $user->save();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return redirect()->route('home')->with('success', 'Negative test reported successfully.');
     }
 }

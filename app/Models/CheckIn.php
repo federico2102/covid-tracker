@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CheckIn extends Model
 {
+    use HasFactory;
+
     protected $fillable = ['user_id', 'location_id', 'check_in_time', 'check_out_time'];
 
     // Check if a user is already checked in at a location
@@ -24,7 +27,7 @@ class CheckIn extends Model
         return self::create([
             'user_id' => $userId,
             'location_id' => $locationId,
-            'check_in_time' => now(),
+            'check_in_time' => Carbon::now(),
         ]);
     }
 

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->date('test_date');
             $table->string('test_picture')->nullable();
-            $table->boolean('notified_contacts')->default(false);
+            $table->boolean('is_active')->default(true);  // If true, user is marked as currently infected
             $table->timestamps();
         });
 
