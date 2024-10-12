@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CheckIn;
 use App\Models\Location;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Contracts\View\View;
@@ -27,33 +28,35 @@ class CheckInController extends Controller
             return response()->json(['error' => 'You cannot check in because you are infected.'], 403);
         }
 
+        if (CheckIn::isCheckedIn(auth()->id())) {
+            return response()->json(['error' => 'You are already checked in here or at another location.'], 403);
+        }
+
         if (!$location) {
-            return redirect()->back()->with('error', 'Invalid location.');
+            return redirect()->route('home')->with('error', 'Invalid location.');
         }
 
         // Check if the location has reached its max capacity
         if ($location->isFull()) {
-            return redirect()->route('home')->with('error', 'This location has reached its maximum capacity. Please try again later.');
-        }
-
-        if (CheckIn::isCheckedIn(auth()->id(), $locationId)) {
-            return redirect()->back()->with('error', 'You are already checked in at this location.');
+            return redirect()->route('home')
+                ->with('error', 'This location has reached its maximum capacity. Please try again later.');
         }
 
         CheckIn::registerCheckIn(auth()->id(), $locationId);
         $location->incrementPeople();
 
-        return redirect()->route('checkin.success', ['location' => $location->id]);
+        return redirect()->route('checkin.success', ['location' => $location->id])
+            ->with('success', 'Check in was successful.');
     }
 
-    public function checkout(): RedirectResponse
+    public function checkout(): JsonResponse|RedirectResponse
     {
         $checkIn = CheckIn::where('user_id', auth()->id())
             ->whereNull('check_out_time')
             ->first();
 
         if (!$checkIn) {
-            return redirect()->back()->with('error', 'You are not checked in anywhere.');
+            return response()->json(['error' => 'You are not checked in anywhere.'], 403);
         }
 
         $checkIn->registerCheckOut();
@@ -67,4 +70,5 @@ class CheckInController extends Controller
     {
         return view('checkin.success', compact('location'));
     }
+
 }

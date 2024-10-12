@@ -13,10 +13,9 @@ class CheckIn extends Model
     protected $fillable = ['user_id', 'location_id', 'check_in_time', 'check_out_time'];
 
     // Check if a user is already checked in at a location
-    public static function isCheckedIn($userId, $locationId)
+    public static function isCheckedIn($userId)
     {
         return self::where('user_id', $userId)
-            ->where('location_id', $locationId)
             ->whereNull('check_out_time')
             ->exists();
     }
