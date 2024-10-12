@@ -12,7 +12,7 @@ class LocationFactory extends Factory
     public function definition()
     {
         return [
-            'name' => $this->faker->company(),
+            'name' => $this->faker->name(),
             'address' => $this->faker->address(),
             'geolocation' => $this->faker->latitude() . ',' . $this->faker->longitude(),
             'max_capacity' => $this->faker->numberBetween(10, 100),

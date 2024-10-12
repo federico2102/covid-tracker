@@ -12,37 +12,36 @@ class CheckInController extends Controller
 {
     public function show(): View
     {
-    return view('checkin.checkin');
+        return view('checkin.checkin');
     }
 
     public function process(Request $request)
     {
-    $url = $request->input('qr_code');
-    $path = parse_url($url, PHP_URL_PATH);
-    $locationId = basename($path);
+        $url = $request->input('qr_code');
+        $path = parse_url($url, PHP_URL_PATH);
+        $locationId = basename($path);
 
-    $location = Location::find($locationId);
+        $location = Location::find($locationId);
 
-    if (!$location) {
-        return redirect()->back()->with('error', 'Invalid location.');
-    }
+        if (auth()->user()->is_infected) {
+            return response()->json(['error' => 'You cannot check in because you are infected.'], 403);
+        }
 
-    // Check if the location has reached its max capacity
-    if ($location->isFull()) {
-        return redirect()->route('home')->with('error', 'This location has reached its maximum capacity. Please try again later.');
-    }
+        if (!$location) {
+            return redirect()->back()->with('error', 'Invalid location.');
+        }
 
-    if (CheckIn::isCheckedIn(auth()->id(), $locationId)) {
-        return redirect()->back()->with('error', 'You are already checked in at this location.');
-    }
+        // Check if the location has reached its max capacity
+        if ($location->isFull()) {
+            return redirect()->route('home')->with('error', 'This location has reached its maximum capacity. Please try again later.');
+        }
 
-    if (auth()->user()->is_infected) {
-        return response()->json(['error' => 'You cannot check in because you are infected.'], 403);
-    }
+        if (CheckIn::isCheckedIn(auth()->id(), $locationId)) {
+            return redirect()->back()->with('error', 'You are already checked in at this location.');
+        }
 
-
-    CheckIn::registerCheckIn(auth()->id(), $locationId);
-    $location->incrementPeople();
+        CheckIn::registerCheckIn(auth()->id(), $locationId);
+        $location->incrementPeople();
 
         return redirect()->route('checkin.success', ['location' => $location->id]);
     }
@@ -50,10 +49,10 @@ class CheckInController extends Controller
     public function checkout(): RedirectResponse
     {
         $checkIn = CheckIn::where('user_id', auth()->id())
-        ->whereNull('check_out_time')
-        ->first();
+            ->whereNull('check_out_time')
+            ->first();
 
-     if (!$checkIn) {
+        if (!$checkIn) {
             return redirect()->back()->with('error', 'You are not checked in anywhere.');
         }
 
@@ -64,7 +63,8 @@ class CheckInController extends Controller
         return redirect()->route('home')->with('success', 'Successfully checked out.');
     }
 
-    public function success(Location $location): View   {
+    public function success(Location $location): View
+    {
         return view('checkin.success', compact('location'));
     }
 }

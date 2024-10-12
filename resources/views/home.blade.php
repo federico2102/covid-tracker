@@ -38,12 +38,16 @@
                                     <button class="btn btn-secondary btn-lg" disabled>Check-in</button>
                                 @else
                                     @if($isCheckedIn)
-                                        <a href="{{ route('checkout') }}" class="btn btn-danger">Check Out</a>
+                                        <form action="{{ route('checkout') }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to check out?');">
+                                            @csrf
+                                            <button type="submit" class="btn btn-danger">Check Out</button>
+                                        </form>
                                     @else
                                         <a href="{{ route('checkin') }}" class="btn btn-success">Check In</a>
                                     @endif
                                 @endif
                             </div>
+
                             <div class="col-md-4 text-center">
                                 <!-- Test Reporting Button on the Right -->
                                 @if(Auth::user()->is_infected)
