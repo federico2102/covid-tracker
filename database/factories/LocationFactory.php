@@ -9,7 +9,7 @@ class LocationFactory extends Factory
 {
     protected $model = Location::class;
 
-    public function definition()
+    public function definition(): array
     {
         return [
             'name' => $this->faker->name(),

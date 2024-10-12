@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Foundation\Application;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use App\Models\Location;
@@ -15,8 +18,11 @@ class LocationController extends Controller
         return view('locations.index', compact('locations'));
     }
 
-    public function create(): View
+    public function create(): Factory|Application|\Illuminate\Contracts\View\View|JsonResponse
     {
+        if (!auth()->user()->is_admin) {
+            return response()->json(['error' => 'Forbidden.'], 403);
+        }
         return view('locations.create');
     }
 
@@ -26,17 +32,23 @@ class LocationController extends Controller
         return view('locations.show', compact('location', 'isAdmin'));
     }
 
-    public function edit(Location $location): View
+    public function edit(Location $location): Application|Factory|\Illuminate\Contracts\View\View|JsonResponse
     {
+        if (!auth()->user()->is_admin) {
+            return response()->json(['error' => 'Forbidden.'], 403);
+        }
         return view('locations.edit', compact('location'));
     }
 
-    public function update(Request $request, Location $location): RedirectResponse
+    public function update(Request $request, Location $location): JsonResponse|RedirectResponse
     {
+        if (!auth()->user()->is_admin) {
+            return response()->json(['error' => 'Forbidden.'], 403);
+        }
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
-            'geolocation' => 'required|string|max:255',
+            'geolocation' => ['required', 'regex:/^-?\d{1,3}\.\d+,\s*-?\d{1,3}\.\d+$/'],
             'max_capacity' => 'required|integer',
             'optional_details' => 'nullable|string',
             'picture' => 'nullable|image',
@@ -51,12 +63,15 @@ class LocationController extends Controller
         return redirect()->route('locations')->with('success', 'Location updated successfully.');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): JsonResponse|RedirectResponse
     {
+        if (!auth()->user()->is_admin) {
+            return response()->json(['error' => 'Forbidden.'], 403);
+        }
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
-            'geolocation' => 'required|string|max:255',
+            'geolocation' => ['required', 'regex:/^-?\d{1,3}\.\d+,\s*-?\d{1,3}\.\d+$/'],
             'max_capacity' => 'required|integer',
             'optional_details' => 'nullable|string',
             'picture' => 'nullable|image',
@@ -74,8 +89,11 @@ class LocationController extends Controller
         return redirect()->route('locations')->with('success', 'Location added successfully.');
     }
 
-    public function destroy(Location $location): RedirectResponse
+    public function destroy(Location $location): JsonResponse|RedirectResponse
     {
+        if (!auth()->user()->is_admin) {
+            return response()->json(['error' => 'Forbidden.'], 403);
+        }
         $location->delete();
         return redirect()->route('locations')->with('success', 'Location deleted successfully.');
     }
