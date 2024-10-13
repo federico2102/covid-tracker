@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Support\Facades\Hash;
-use Tests\Support\UserTestHelper;
-use Tests\Support\AssertionHelper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Tests\Support\AssertionHelper;
+use Tests\Support\UserTestHelper;
 use Tests\TestCase;
 
 class UserManagementTest extends TestCase
