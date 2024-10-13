@@ -90,7 +90,7 @@ class InfectionReportTest extends TestCase
         $infectedUser = UserTestHelper::createNonAdminUser();
         $location = LocationTestHelper::createLocation();
 
-        // Report infection without middleware
+        // Report infection
         $this->actingAs($infectedUser)->post(route('infectionReports.store'), [
             'test_date' => now()->format('Y-m-d'),
             'proof' => null,

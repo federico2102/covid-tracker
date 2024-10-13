@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ContactNotificationMail;
 use App\Models\InfectionReport;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Mail;
 
 class InfectionReportController extends Controller
 {
@@ -54,6 +56,15 @@ class InfectionReportController extends Controller
                     ' on ' . $sharedCheckinTime,
                 'is_read' => false,
             ]);
+
+            // Send an email notification
+            Mail::to($contactedUser->email)->queue(new ContactNotificationMail(
+                $contactedUser,
+                $user,  // infected user
+                $sharedLocation,
+                $sharedCheckinTime
+            ));
+
         }
 
         return redirect()->route('home')->with('success', 'Positive test reported successfully.');
