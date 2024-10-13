@@ -103,7 +103,7 @@ The test suite covers:
 
 - **Laravel**: Backend framework for managing routes, authentication, and business logic.
 - **Google Maps API**: Integrated to display and manage location details.
-- **MySQL / SQLite**: For database management (configurable in `.env`).
+- **PostgreSQL / SQLite**: For database management (configurable in `.env`).
 - **Bootstrap**: For responsive UI design.
 - **Selenium / PHP Unit**: For testing and automation.
 
