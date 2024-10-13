@@ -42,9 +42,16 @@
 
                             <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                 <!-- Profile Link -->
-                                <a class="dropdown-item" href="{{ route('profile') }}">
+                                <a class="dropdown-item" href="{{ route('profile.show') }}">
                                     {{ __('Profile') }}
                                 </a>
+
+                                <!-- Users list link (admin only) -->
+                                @if(Auth::user()->is_admin)
+                                    <a class="dropdown-item" href="{{ route('users.index') }}">
+                                        {{ __('Manage Users') }}
+                                    </a>
+                                @endif
 
                                 <!-- Logout Link -->
                                 <a class="dropdown-item" href="{{ route('logout') }}"

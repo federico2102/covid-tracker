@@ -12,6 +12,7 @@
 
         <form method="POST" action="{{ route('profile.update') }}">
             @csrf
+            @method('PUT') <!-- Spoof the method as PUT -->
 
             <div class="mb-3">
                 <label for="email" class="form-label">{{ __('Email Address') }}</label>

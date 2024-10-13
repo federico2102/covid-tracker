@@ -1,5 +1,4 @@
 <?php
-
 namespace Tests\Support;
 
 use App\Models\User;
@@ -20,4 +19,16 @@ class UserTestHelper
     {
         return User::factory()->create(array_merge(['is_admin' => false], $attributes));
     }
+
+    public static function updateUserRoleRequest($user, $targetUserId, $attributes)
+    {
+        return $user->put(route('users.update.role', $targetUserId), $attributes);
+    }
+
+    public static function updateUserProfileRequest($user, $attributes, $targetUserId = null)
+    {
+        $userId = $targetUserId ?? $user->id;
+        return $user->put(route('profile.update', $userId), $attributes);
+    }
 }
+

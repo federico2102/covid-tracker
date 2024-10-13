@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InfectionReportController;
+use App\Http\Controllers\UserController;
 use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -26,9 +27,13 @@ Route::get('/login', [App\Http\Controllers\Auth\LoginController::class, 'showLog
 Route::post('/login', [App\Http\Controllers\Auth\LoginController::class, 'login'])->name('login.submit');
 
 
-// Profile routes (show or update)
-Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('profile');
-Route::post('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+// Profile routes
+Route::get('/profile', [App\Http\Controllers\UserController::class, 'showProfile'])->name('profile.show');
+Route::put('/profile/{user}', [App\Http\Controllers\UserController::class, 'updateProfile'])->name('profile.update');
+
+// Admin role management route
+Route::get('/users', [UserController::class, 'index'])->name('users.index')->middleware('auth');
+Route::put('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.update.role');
 
 // Check-in routes
 Route::get('/checkin', [App\Http\Controllers\CheckinController::class, 'show'])->middleware('auth')->name('checkin');
