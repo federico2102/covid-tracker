@@ -62,4 +62,17 @@ class User extends Authenticatable
     {
         return $this->hasMany(InfectionReport::class, 'user_id');
     }
+
+    public function checkins(): HasMany
+    {
+        return $this->hasMany(Checkin::class);
+    }
+
+    public function latestLocation()
+    {
+        // Fetch the latest check-in, or return null if no check-in exists
+        $latestCheckin = $this->checkins()->latest()->first();
+        return $latestCheckin ? $latestCheckin->location : null;
+    }
+
 }

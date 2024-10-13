@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CheckIn;
 use App\Models\InfectionReport;
 use App\Models\User;
 use App\Models\Location;
@@ -12,6 +13,8 @@ use Tests\Support\AssertionHelper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
+
 
 class InfectionReportTest extends TestCase
 {
@@ -57,26 +60,28 @@ class InfectionReportTest extends TestCase
 
     public function test_users_in_same_location_receive_notifications()
     {
-        // Create infected and contacted users
         $infectedUser = UserTestHelper::createNonAdminUser();
         $contactedUser = UserTestHelper::createNonAdminUser();
         $location = LocationTestHelper::createLocation();
 
-        // Check-in both users at the same location
-        CheckInTestHelper::checkInUser($this->actingAs($infectedUser), $location->id);
-        CheckInTestHelper::checkInUser($this->actingAs($contactedUser), $location->id);
+        // Check-in both users at the same location within a week of the positive test
+        CheckInTestHelper::checkInUser($this->actingAs($infectedUser), $location->id, now()->subDays(4), $infectedUser->id);  // 3 days ago
+        CheckInTestHelper::checkInUser($this->actingAs($contactedUser), $location->id, now()->subDays(4), $contactedUser->id);  // 4 days ago
 
-        // Report infection for the first user
+        // Simulate auto-checkout for users who have been checked in for more than 3 hours
+        CheckInTestHelper::simulateAutoCheckout();
+
+        // Report infection for the infected user
         $this->actingAs($infectedUser)->post(route('infectionReports.store'), [
             'test_date' => now()->format('Y-m-d'),
             'proof' => null,
         ]);
 
-        // Simulate notification sending logic
-        // Ensure the contacted user received a notification
+        // Assert that a notification was created for the contacted user
         $this->assertDatabaseHas('notifications', [
-            'notifiable_id' => $contactedUser->id,
-            'type' => 'App\Notifications\InfectionReported' // Adjust the notification type if needed
+            'user_id' => $contactedUser->id,
+            'type' => 'contact',
+            'is_read' => false,
         ]);
     }
 
@@ -124,6 +129,29 @@ class InfectionReportTest extends TestCase
 
         // Ensure the latest infection report is inactive
         $this->assertDatabaseHas('infection_reports', ['user_id' => $user->id, 'is_active' => false]);
+    }
+
+    public function test_contacted_users_are_marked_correctly()
+    {
+        $infectedUser = UserTestHelper::createNonAdminUser();
+        $contactedUser = UserTestHelper::createNonAdminUser();
+        $location = LocationTestHelper::createLocation();
+
+        // Check-in both users at the same location within a week of the positive test
+        CheckInTestHelper::checkInUser($this->actingAs($infectedUser), $location->id, now()->subDays(4), $infectedUser->id);  // 3 days ago
+        CheckInTestHelper::checkInUser($this->actingAs($contactedUser), $location->id, now()->subDays(4), $contactedUser->id);  // 4 days ago
+
+        // Simulate auto-checkout for users who have been checked in for more than 3 hours
+        CheckInTestHelper::simulateAutoCheckout();
+
+        // Report infection for the infected user
+        $this->actingAs($infectedUser)->post(route('infectionReports.store'), [
+            'test_date' => now()->format('Y-m-d'),
+            'proof' => null,
+        ]);
+
+        // Assert that the contacted user is marked as contacted
+        $this->assertEquals(1, $contactedUser->fresh()->is_contacted);
     }
 
 }

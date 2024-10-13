@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Notification extends Model
 {
-    protected $fillable = ['user_id', 'infection_report_id', 'message', 'is_read'];
+    use HasFactory;
+
+    protected $fillable = ['user_id', 'infection_report_id', 'type', 'message', 'is_read'];
 
     public function user(): BelongsTo
     {
@@ -20,4 +22,5 @@ class Notification extends Model
         return $this->belongsTo(InfectionReport::class);
     }
 }
+
 

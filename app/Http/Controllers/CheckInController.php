@@ -23,9 +23,16 @@ class CheckInController extends Controller
         $locationId = basename($path);
 
         $location = Location::find($locationId);
+        $user = auth()->user();
 
-        if (auth()->user()->is_infected) {
+        if ($user->is_infected) {
             return response()->json(['error' => 'You cannot check in because you are infected.'], 403);
+        }
+
+        if ($user->is_contacted) {
+            return response()->json([
+                'message' => 'You cannot check in because you were in contact with an infected individual.',
+            ], 403);
         }
 
         if (CheckIn::isCheckedIn(auth()->id())) {
