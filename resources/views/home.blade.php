@@ -69,7 +69,7 @@
                                                             aria-label="Close"></button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    <form action="{{ route('negative-test.storeNegative') }}" method="POST"
+                                                    <form action="{{ route('infectionReports.negative') }}" method="POST"
                                                           enctype="multipart/form-data">
                                                         @csrf
                                                         <div class="mb-3">
