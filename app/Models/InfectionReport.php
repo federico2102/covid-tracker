@@ -16,5 +16,12 @@ class InfectionReport extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public static function deactivateReports($userId)
+    {
+        return self::where('user_id', $userId)
+            ->where('is_active', true)
+            ->update(['is_active' => false]);
+    }
 }
 
