@@ -36,16 +36,10 @@ class ContactNotificationMail extends Mailable
      *
      * @return $this
      */
-    public function build()
+    public function build(): static
     {
         return $this->from(config('mail.from.address'), config('mail.from.name'))
             ->subject('Contact Notification: COVID-19 Exposure')
-            ->view('emails.contact_notification')
-            ->with([
-                'contactedUser' => $this->contactedUser,
-                'infectedUser' => $this->infectedUser,
-                'sharedLocation' => $this->sharedLocation,
-                'sharedCheckinTime' => $this->sharedCheckinTime,
-            ]);
+            ->view('emails.contact_notification');
     }
 }

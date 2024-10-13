@@ -31,8 +31,7 @@ class CheckInController extends Controller
 
         if ($user->is_contacted) {
             return response()->json([
-                'message' => 'You cannot check in because you were in contact with an infected individual.',
-            ], 403);
+                'error' => 'You cannot check in because you were in contact with an infected individual.'], 403);
         }
 
         if (CheckIn::isCheckedIn(auth()->id())) {

@@ -21,7 +21,7 @@ class CheckInTest extends TestCase
         $user = UserTestHelper::createUser();
         $location = LocationTestHelper::createLocation();
 
-        $response = CheckInTestHelper::checkInUser($this->actingAs($user), $location->id);
+        $response = CheckInTestHelper::checkInThroughRequest($this->actingAs($user), $location->id);
 
         // Use assertion helper for response
         AssertionHelper::assertSuccessfulResponse($response,
@@ -40,7 +40,7 @@ class CheckInTest extends TestCase
         $user = UserTestHelper::createUser(['is_infected' => true]);
         $location = LocationTestHelper::createLocation();
 
-        $response = CheckInTestHelper::checkInUser($this->actingAs($user), $location->id);
+        $response = CheckInTestHelper::checkInThroughRequest($this->actingAs($user), $location->id);
 
         // Use assertion helper for forbidden response
         AssertionHelper::assertForbiddenResponse($response, 'You cannot check in because you are infected.');
@@ -54,7 +54,7 @@ class CheckInTest extends TestCase
         $user = UserTestHelper::createUser();
         $location = LocationTestHelper::createLocation();
 
-        CheckInTestHelper::checkInUser($this->actingAs($user), $location->id);
+        CheckInTestHelper::checkInThroughRequest($this->actingAs($user), $location->id);
 
         // Check the user out
         $response = CheckInTestHelper::checkOutUser($this->actingAs($user));
@@ -106,14 +106,14 @@ class CheckInTest extends TestCase
         $location2 = LocationTestHelper::createLocation();
 
         // First check-in
-        CheckInTestHelper::checkInUser($this->actingAs($user), $location->id);
+        CheckInTestHelper::checkInThroughRequest($this->actingAs($user), $location->id);
 
         // Attempt to check in again at the same location
-        $response = CheckInTestHelper::checkInUser($this->actingAs($user), $location->id);
+        $response = CheckInTestHelper::checkInThroughRequest($this->actingAs($user), $location->id);
         AssertionHelper::assertForbiddenResponse($response, 'You are already checked in here or at another location.');
 
         // Attempt to check in at another location
-        $response = CheckInTestHelper::checkInUser($this->actingAs($user), $location2->id);
+        $response = CheckInTestHelper::checkInThroughRequest($this->actingAs($user), $location2->id);
         AssertionHelper::assertForbiddenResponse($response, 'You are already checked in here or at another location.');
 
         // Assert there is a single active check-in
@@ -133,7 +133,7 @@ class CheckInTest extends TestCase
         $location->current_people = $location->max_capacity;
         $location->save();
 
-        $response = CheckInTestHelper::checkInUser($this->actingAs($user), $location->id);
+        $response = CheckInTestHelper::checkInThroughRequest($this->actingAs($user), $location->id);
 
         // Use assertion helper for full capacity response
         AssertionHelper::assertSuccessfulResponse($response, route('home'));
@@ -145,11 +145,11 @@ class CheckInTest extends TestCase
         $user = UserTestHelper::createUser();
         $location = LocationTestHelper::createLocation();
 
-        CheckInTestHelper::checkInUser($this->actingAs($user), $location->id);
+        CheckInTestHelper::checkInThroughRequest($this->actingAs($user), $location->id);
         CheckInTestHelper::checkOutUser($this->actingAs($user));
 
         // Check in again
-        $response = CheckInTestHelper::checkInUser($this->actingAs($user), $location->id);
+        $response = CheckInTestHelper::checkInThroughRequest($this->actingAs($user), $location->id);
 
         AssertionHelper::assertSuccessfulResponse($response, route('checkin.success', ['location' => $location->id]), 'Check in was successful.');
 
@@ -165,7 +165,7 @@ class CheckInTest extends TestCase
         $user = UserTestHelper::createUser();
 
         // Attempt to check in with invalid data
-        $response = CheckInTestHelper::checkInUser($this->actingAs($user), null);
+        $response = CheckInTestHelper::checkInThroughRequest($this->actingAs($user), null);
 
         AssertionHelper::assertSuccessfulResponse($response, route('home'));
         $response->assertSessionHas('error', 'Invalid location.');
@@ -176,7 +176,7 @@ class CheckInTest extends TestCase
         $user = UserTestHelper::createUser();
         $location = LocationTestHelper::createLocation();
 
-        CheckInTestHelper::checkInUser($this->actingAs($user), $location->id);
+        CheckInTestHelper::checkInThroughRequest($this->actingAs($user), $location->id);
         CheckInTestHelper::checkOutUser($this->actingAs($user));
 
         // Assert the first check-out was successful
@@ -229,7 +229,7 @@ class CheckInTest extends TestCase
         $location = LocationTestHelper::createLocation();
 
         // Attempt to check in as an infected admin
-        $response = CheckInTestHelper::checkInUser($this->actingAs($admin), $location->id);
+        $response = CheckInTestHelper::checkInThroughRequest($this->actingAs($admin), $location->id);
 
         AssertionHelper::assertForbiddenResponse($response, 'You cannot check in because you are infected.');
     }

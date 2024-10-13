@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -32,7 +33,8 @@ class User extends Authenticatable
         'phone_number',
         'password',
         'is_admin',
-        'is_infected'
+        'is_infected',
+        'is_contacted'
     ];
 
 
@@ -69,6 +71,11 @@ class User extends Authenticatable
         return $this->hasMany(Checkin::class);
     }
 
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
+
     public function latestLocation()
     {
         // Fetch the latest check-in, or return null if no check-in exists
@@ -76,28 +83,30 @@ class User extends Authenticatable
         return $latestCheckin ? $latestCheckin->location : null;
     }
 
-    public function markAsInfected()
+    public function markAsInfected(): void
     {
         $this->is_infected = true;
         $this->save();
     }
 
-    public function markAsContacted()
+    public function markAsContacted(): void
     {
         $this->is_contacted = true;
         $this->save();
     }
 
-    public function markAsHealthy()
+    public function markAsHealthy(): void
     {
         $this->is_infected = false;
+        $this->is_contacted = false;
         $this->save();
     }
 
     public function getContactedUsersDuringPeriod(string $testDate): Collection
     {
         // Fetch all locations where the infected user checked in during the past week
-        $infectedCheckins = $this->checkins()->whereBetween('check_in_time', [now()->subWeek(), $testDate])->get();
+        $testDateCarbon = Carbon::parse($testDate);
+        $infectedCheckins = $this->checkins()->whereBetween('check_in_time', [$testDateCarbon->subDays(7), now()])->get();
 
         if ($infectedCheckins->isEmpty()) {
             return collect();

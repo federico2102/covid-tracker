@@ -6,6 +6,7 @@ use App\Models\CheckIn;
 use App\Models\InfectionReport;
 use App\Models\User;
 use App\Models\Location;
+use Illuminate\Support\Facades\Mail;
 use Tests\Support\UserTestHelper;
 use Tests\Support\LocationTestHelper;
 use Tests\Support\CheckInTestHelper;
@@ -13,48 +14,34 @@ use Tests\Support\AssertionHelper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
-
+use App\Mail\ContactNotificationMail;
 
 class InfectionReportTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_can_report_positive_infection()
+    public function test_user_can_report_positive_and_negative_infection()
     {
         $user = UserTestHelper::createNonAdminUser();
 
+        // Positive test
         $response = $this->actingAs($user)->post(route('infectionReports.store'), [
             'test_date' => now()->subDays(1)->format('Y-m-d'),
-            'proof' => null,  // No proof uploaded
+            'proof' => null,
         ]);
-
         $response->assertStatus(302);
         $this->assertDatabaseHas('infection_reports', ['user_id' => $user->id, 'is_active' => true]);
-
-        // Fetch fresh user data and assert that is_infected is 1 (representing true in the database)
         $this->assertEquals(1, $user->fresh()->is_infected);
-    }
 
-
-    public function test_user_can_report_negative_test()
-    {
-        $user = UserTestHelper::createNonAdminUser();
+        // Negative test
         InfectionReport::create([
             'user_id' => $user->id,
             'test_date' => now()->subDays(10)->format('Y-m-d'),
-            'proof' => null,
             'is_active' => true,
         ]);
-
-        $response = $this->actingAs($user)->post(route('infectionReports.negative'), [
-            'proof' => null, // Optional proof of negative test
-        ]);
-
+        $response = $this->actingAs($user)->post(route('infectionReports.negative'), ['proof' => null]);
         $response->assertStatus(302);
         $this->assertDatabaseHas('infection_reports', ['user_id' => $user->id, 'is_active' => false]);
-
-        // Assert that 'is_infected' is 0 (representing false in the database)
         $this->assertEquals(0, $user->fresh()->is_infected);
     }
 
@@ -64,20 +51,12 @@ class InfectionReportTest extends TestCase
         $contactedUser = UserTestHelper::createNonAdminUser();
         $location = LocationTestHelper::createLocation();
 
-        // Check-in both users at the same location within a week of the positive test
-        CheckInTestHelper::checkInUser($this->actingAs($infectedUser), $location->id, now()->subDays(4), $infectedUser->id);  // 3 days ago
-        CheckInTestHelper::checkInUser($this->actingAs($contactedUser), $location->id, now()->subDays(4), $contactedUser->id);  // 4 days ago
+        CheckInTestHelper::checkInWithDate($infectedUser, $location->id, now()->subDays(4));
+        CheckInTestHelper::checkInWithDate($contactedUser, $location->id, now()->subDays(4));
 
-        // Simulate auto-checkout for users who have been checked in for more than 3 hours
         CheckInTestHelper::simulateAutoCheckout();
+        $this->actingAs($infectedUser)->post(route('infectionReports.store'), ['test_date' => now()->format('Y-m-d')]);
 
-        // Report infection for the infected user
-        $this->actingAs($infectedUser)->post(route('infectionReports.store'), [
-            'test_date' => now()->format('Y-m-d'),
-            'proof' => null,
-        ]);
-
-        // Assert that a notification was created for the contacted user
         $this->assertDatabaseHas('notifications', [
             'user_id' => $contactedUser->id,
             'type' => 'contact',
@@ -88,70 +67,97 @@ class InfectionReportTest extends TestCase
     public function test_infected_or_contacted_user_cannot_check_in()
     {
         $infectedUser = UserTestHelper::createNonAdminUser();
+        $contactedUser = UserTestHelper::createNonAdminUser();
         $location = LocationTestHelper::createLocation();
 
-        // Report infection
-        $this->actingAs($infectedUser)->post(route('infectionReports.store'), [
-            'test_date' => now()->format('Y-m-d'),
-            'proof' => null,
-        ]);
+        CheckInTestHelper::checkInWithDate($infectedUser, $location->id, now()->subDays(3));
+        CheckInTestHelper::checkInWithDate($contactedUser, $location->id, now()->subDays(3));
+        CheckInTestHelper::simulateAutoCheckout();
 
-        // Refresh the user to ensure the infection status is updated
-        $infectedUser->refresh();
+        // Report infection for infected user
+        $this->actingAs($infectedUser)->post(route('infectionReports.store'), ['test_date' => now()->format('Y-m-d')]);
 
-        // Try to check in without middleware
-        $response = $this->withoutMiddleware()->actingAs($infectedUser)->post(route('checkin.process'), [
+        // Infected user cannot check in
+        $response = $this->actingAs($infectedUser)->post(route('checkin.process'), [
             'qr_code' => 'http://example.com/checkin/' . $location->id,
         ]);
-
-        // Assert that the user cannot check in
         AssertionHelper::assertForbiddenResponse($response, 'You cannot check in because you are infected.');
-    }
 
-
-
-    public function test_automatic_reset_after_14_days()
-    {
-        // Create an infected user with an active infection report
-        $user = UserTestHelper::createNonAdminUser();
-        $user->update(['is_infected' => true]);
-        InfectionReport::create([
-            'user_id' => $user->id,
-            'test_date' => now()->subDays(15),  // 15 days ago
-            'is_active' => true,
+        // Contacted user cannot check in
+        $this->assertEquals(1, $contactedUser->refresh()->is_contacted);
+        $response = $this->actingAs($contactedUser)->post(route('checkin.process'), [
+            'qr_code' => 'http://example.com/checkin/' . $location->id,
         ]);
-
-        // Simulate running the command that resets the infection status after 14 days
-        $this->artisan('checkin:auto-reset-infected-status')->assertExitCode(0);
-
-        // Ensure the user is marked as healthy
-        $this->assertEquals(0, $user->fresh()->is_infected);
-
-        // Ensure the latest infection report is inactive
-        $this->assertDatabaseHas('infection_reports', ['user_id' => $user->id, 'is_active' => false]);
+        AssertionHelper::assertForbiddenResponse($response, 'You cannot check in because you were in contact with an infected individual.');
     }
 
-    public function test_contacted_users_are_marked_correctly()
+    public function test_reset_status_after_14_days()
     {
         $infectedUser = UserTestHelper::createNonAdminUser();
         $contactedUser = UserTestHelper::createNonAdminUser();
         $location = LocationTestHelper::createLocation();
 
-        // Check-in both users at the same location within a week of the positive test
-        CheckInTestHelper::checkInUser($this->actingAs($infectedUser), $location->id, now()->subDays(4), $infectedUser->id);  // 3 days ago
-        CheckInTestHelper::checkInUser($this->actingAs($contactedUser), $location->id, now()->subDays(4), $contactedUser->id);  // 4 days ago
+        // Infected and contacted users check in
+        CheckInTestHelper::checkInWithDate($infectedUser, $location->id, now()->subDays(15));
+        CheckInTestHelper::checkInWithDate($contactedUser, $location->id, now()->subDays(15));
 
-        // Simulate auto-checkout for users who have been checked in for more than 3 hours
+        // Simulate auto-checkout and report infection
         CheckInTestHelper::simulateAutoCheckout();
+        $this->actingAs($infectedUser)->post(route('infectionReports.store'), ['test_date' => now()->subDays(14)]);
 
-        // Report infection for the infected user
-        $this->actingAs($infectedUser)->post(route('infectionReports.store'), [
-            'test_date' => now()->format('Y-m-d'),
-            'proof' => null,
-        ]);
-
-        // Assert that the contacted user is marked as contacted
-        $this->assertEquals(1, $contactedUser->fresh()->is_contacted);
+        // Reset status after 14 days
+        $this->artisan('checkin:auto-reset-infected-status')->assertExitCode(0);
+        $this->assertEquals(0, $infectedUser->fresh()->is_infected);
+        $this->assertEquals(0, $contactedUser->fresh()->is_contacted);
     }
 
+    public function test_email_is_sent_to_contacted_user()
+    {
+        Mail::fake();
+
+        $infectedUser = UserTestHelper::createNonAdminUser();
+        $contactedUser = UserTestHelper::createNonAdminUser();
+        $location = LocationTestHelper::createLocation();
+
+        CheckInTestHelper::checkInWithDate($infectedUser, $location->id, now()->subDays(4));
+        CheckInTestHelper::checkInWithDate($contactedUser, $location->id, now()->subDays(4));
+
+        CheckInTestHelper::simulateAutoCheckout();
+        $this->actingAs($infectedUser)->post(route('infectionReports.store'), ['test_date' => now()->format('Y-m-d')]);
+
+        Mail::assertQueued(ContactNotificationMail::class, function ($mail) use ($contactedUser) {
+            return $mail->hasTo($contactedUser->email);
+        });
+    }
+
+    public function test_no_email_sent_if_no_contacted_users()
+    {
+        Mail::fake();
+        $infectedUser = UserTestHelper::createNonAdminUser();
+        $location = LocationTestHelper::createLocation();
+
+        CheckInTestHelper::checkInWithDate($infectedUser, $location->id, now()->subDays(4));
+        CheckInTestHelper::simulateAutoCheckout();
+
+        $this->actingAs($infectedUser)->post(route('infectionReports.store'), ['test_date' => now()->format('Y-m-d')]);
+        Mail::assertNothingQueued();
+    }
+
+    public function test_notification_is_not_duplicated_for_multiple_contacts()
+    {
+        Mail::fake();
+        $infectedUser = UserTestHelper::createNonAdminUser();
+        $contactedUser = UserTestHelper::createNonAdminUser();
+        $location = LocationTestHelper::createLocation();
+
+        CheckInTestHelper::checkInWithDate($infectedUser, $location->id, now()->subDays(4));
+        CheckInTestHelper::checkInWithDate($contactedUser, $location->id, now()->subDays(4));
+        CheckInTestHelper::checkInWithDate($contactedUser, $location->id, now()->subDays(3));
+
+        CheckInTestHelper::simulateAutoCheckout();
+        $this->actingAs($infectedUser)->post(route('infectionReports.store'), ['test_date' => now()->format('Y-m-d')]);
+
+        $this->assertCount(1, $contactedUser->notifications()->where('type', 'contact')->get());
+        Mail::assertQueued(ContactNotificationMail::class, 1);
+    }
 }

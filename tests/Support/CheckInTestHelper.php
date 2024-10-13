@@ -7,21 +7,20 @@ use Carbon\Carbon;
 
 class CheckInTestHelper
 {
-    public static function checkInUser($user, $locationId, $date = null, $userId = null)
+    public static function checkInWithDate($user, $locationId, $date)
     {
-       if ($date){
-           $checkin = CheckIn::create([
-               'user_id' => $userId,
-               'location_id' => $locationId,
-               'check_in_time' => $date,
-           ]);
-       } else {
-           $checkin = $user->withoutMiddleware()->post(route('checkin.process'), [
-               'qr_code' => 'http://example.com/checkin/' . $locationId,
-           ]);
-       }
+        return CheckIn::create([
+            'user_id' => $user->id,
+            'location_id' => $locationId,
+            'check_in_time' => $date,
+        ]);
+    }
 
-       return $checkin;
+    public static function checkInThroughRequest($user, $locationId)
+    {
+        return $user->withoutMiddleware()->post(route('checkin.process'), [
+            'qr_code' => 'http://example.com/checkin/' . $locationId,
+        ]);
     }
 
     public static function checkOutUser($user)

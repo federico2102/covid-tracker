@@ -9,14 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('notifications', function (Blueprint $table) {
-            $table->string('type')->nullable()->after('notifiable_id');
+            $table->timestamp('date_of_contact')->nullable()->after('infection_report_id');
         });
     }
 
     public function down(): void
     {
         Schema::table('notifications', function (Blueprint $table) {
-            $table->dropColumn('type');
+            $table->dropColumn('date_of_contact');
         });
     }
 

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\User;
 use App\Models\InfectionReport;
+use App\Models\Notification;
 use Carbon\Carbon;
 
 class AutoResetInfectedStatus extends Command
@@ -21,20 +22,20 @@ class AutoResetInfectedStatus extends Command
      *
      * @var string
      */
-    protected $description = 'Automatically resets infected status after 14 days';
+    protected $description = 'Automatically resets infected and contacted statuses after 14 days';
 
     /**
      * Execute the console command.
      */
     public function handle(): void
     {
-        // Get all users who have active infection reports older than 14 days
-        $users = User::whereHas('infectionReports', function ($query) {
+        // Reset infected users after 14 days
+        $infectedUsers = User::whereHas('infectionReports', function ($query) {
             $query->where('is_active', true)
                 ->whereDate('test_date', '<=', Carbon::now()->subDays(14));
         })->get();
 
-        foreach ($users as $user) {
+        foreach ($infectedUsers as $user) {
             // Update infection report to inactive
             InfectionReport::where('user_id', $user->id)
                 ->where('is_active', true)
@@ -46,6 +47,19 @@ class AutoResetInfectedStatus extends Command
             $this->info("User {$user->id} infection status reset.");
         }
 
-        $this->info('Infection status reset for all users after 14 days.');
+        // Reset contacted users after 14 days
+        $contactedUsers = User::whereHas('notifications', function ($query) {
+            $query->where('type', 'contact')
+                ->whereDate('date_of_contact', '<=', Carbon::now()->subDays(14));
+        })->get();
+
+        foreach ($contactedUsers as $user) {
+            // Reset the 'is_contacted' status to false
+            $user->update(['is_contacted' => false]);
+
+            $this->info("User {$user->id} contact status reset.");
+        }
+
+        $this->info('Infection and contact statuses reset for all users after 14 days.');
     }
 }

@@ -10,7 +10,7 @@ class Notification extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'infection_report_id', 'type', 'message', 'is_read'];
+    protected $fillable = ['user_id', 'infection_report_id', 'type', 'message', 'is_read', 'date_of_contact'];
 
     public function user(): BelongsTo
     {

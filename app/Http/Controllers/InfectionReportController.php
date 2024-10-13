@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class InfectionReportController extends Controller
@@ -54,6 +55,7 @@ class InfectionReportController extends Controller
                 'type' => 'contact',
                 'message' => 'You were in contact with an infected person at ' . $sharedLocation->name .
                     ' on ' . $sharedCheckinTime,
+                'date_of_contact' => $sharedCheckinTime,
                 'is_read' => false,
             ]);
 
@@ -88,7 +90,7 @@ class InfectionReportController extends Controller
         return redirect()->route('home')->with('success', 'Negative test reported successfully.');
     }
 
-    private function getContactedUsers(User $infectedUser, string $testDate): Collection
+    private function getContactedUsers($infectedUser, string $testDate): Collection
     {
         // Fetch all locations where the infected user checked in during the last week before the test date
         return $infectedUser->getContactedUsersDuringPeriod($testDate);
