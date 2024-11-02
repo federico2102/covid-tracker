@@ -1,66 +1,110 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+---
+# COVID-19 Tracker Application
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This Laravel-based web application helps manage check-ins, track COVID-19 exposures, and notify users who may have been in contact with infected individuals. It features real-time integration with Google Maps API to display locations and their details.
 
-## About Laravel
+## Key Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **User Roles**: Regular users and admins, with unique functionalities for each.
+- **Check-In System**: Users can check in to specific locations via QR codes, with automatic check-out after 3 hours.
+- **Infection Reports**: Users can report positive or negative COVID-19 tests. Notifications are sent to users who were in contact with an infected person.
+- **Contact Notifications**: Users who have been in contact with an infected individual are notified via email and app.
+- **Auto Reset**: Infected and contacted statuses are automatically reset after 14 days.
+- **Google Maps API Integration**: Locations include detailed information such as name, address, and geolocation, all displayed on a map.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Installation
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+To set up the project locally, follow these steps:
 
-## Learning Laravel
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/yourusername/covid-tracker.git
+   cd covid-tracker
+   ```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+2. **Install dependencies**:
+   ```bash
+   composer install
+   npm install
+   ```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+3. **Set up environment variables**:
+   - Copy `.env.example` to `.env`:
+     ```bash
+     cp .env.example .env
+     ```
+   - Update `.env` with your database credentials, mail configuration, and Google Maps API key:
+     ```env
+     DB_DATABASE=your_database
+     DB_USERNAME=your_username
+     DB_PASSWORD=your_password
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+     GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+     ```
 
-## Laravel Sponsors
+4. **Generate an application key**:
+   ```bash
+   php artisan key:generate
+   ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+5. **Run migrations**:
+   ```bash
+   php artisan migrate
+   ```
 
-### Premium Partners
+6. **Run the project**:
+   ```bash
+   php artisan serve
+   ```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+7. **Set up front-end dependencies** (optional but recommended):
+   ```bash
+   npm run dev
+   ```
 
-## Contributing
+## Usage
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Admin Features
 
-## Code of Conduct
+- **Add Locations**: Admins can add new locations with details such as name, address, geolocation, maximum capacity, and optional QR codes for check-ins.
+- **Modify Locations**: Admins can edit or delete existing locations.
+- **View Statistics**: Admins can view statistics related to users, locations, and COVID-19 infections.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### User Features
 
-## Security Vulnerabilities
+- **Check In**: Users can check in to locations via QR codes.
+- **Check Out**: After checking in, users can manually check out or they will be automatically checked out after 3 hours.
+- **Report COVID Status**: Users can report positive or negative test results, and notifications will be sent to other users who shared locations.
+- **Profile Management**: Users can update personal information such as phone number and email.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### COVID-19 Exposure Tracking
 
-## License
+- Users who were in contact with an infected individual are notified via email and the app. They cannot check in until they report a negative test or 14 days have passed.
+- Infected users are automatically marked as healthy 14 days after their positive test.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Testing
+
+This application includes extensive automated testing for the core functionalities. To run the tests:
+
+1. **Run tests**:
+   ```bash
+   php artisan test
+   ```
+
+The test suite covers:
+
+- Positive and negative test reporting.
+- Notification handling for infected and contacted users.
+- Checking in and out of locations.
+- Automated status resets for users after 14 days.
+- Prevention of duplicate notifications.
+
+## Technologies Used
+
+- **Laravel**: Backend framework for managing routes, authentication, and business logic.
+- **Google Maps API**: Integrated to display and manage location details.
+- **PostgreSQL / SQLite**: For database management (configurable in `.env`).
+- **Bootstrap**: For responsive UI design.
+- **Selenium / PHP Unit**: For testing and automation.
+
+---
